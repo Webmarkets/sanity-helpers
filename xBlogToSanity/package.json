@@ -1,0 +1,19 @@
+{
+  "name": "xblogtosanity",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@sanity/block-tools": "^2.24.0",
+    "@sanity/schema": "^2.24.0",
+    "fast-xml-parser": "^4.0.1",
+    "xml2js": "^0.4.23",
+    "xmldom": "^0.6.0"
+  }
+}
