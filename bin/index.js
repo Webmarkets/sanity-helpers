@@ -1,97 +1,117 @@
 #!/usr/bin/env node
 
-const { XMLParser } = require("fast-xml-parser/src/fxp");
-const { IdGenerator } = require("./id-generator");
-const axios = require("axios");
-const Schema = require("@sanity/schema");
-const fs = require("fs");
+const { XMLParser } = require('fast-xml-parser/src/fxp');
+const { IdGenerator } = require('./id-generator');
+const axios = require('axios');
+const Schema = require('@sanity/schema');
+const fs = require('fs');
 let publish = false;
 const args = process.argv.slice(2);
 args.forEach((val) => {
-  if (val === "--publish") {
+  if (val === '--publish') {
     publish = true;
-    console.log("Publishing to Sanity");
+    console.log('Publishing to Sanity');
   }
 });
-const config = JSON.parse(fs.readFileSync("./env.json"));
+const config = JSON.parse(fs.readFileSync('./env.json'));
 
 const api = axios.create({
-  baseURL: "https://1054cqfs.api.sanity.io/v1/data/mutate/production",
+  baseURL: 'https://bjktnsyb.api.sanity.io/v1/data/mutate/production',
   timeout: 10000,
   headers: {
-    "User-Agent": "blog-client",
-    "Content-Type": "application/json",
+    'User-Agent': 'blog-client',
+    'Content-Type': 'application/json',
     Authorization: `Bearer ${config.apiKey}`,
   },
 });
 
-let jsonData = "";
+let jsonData = '';
 
 const categories = {
-  "Food Allergy": "1ce33a4c-0eed-46e0-b362-62a5f15b4366",
-  "Healthy Skins": "0f6afb52-df81-4409-86b7-77b9447ac7ce",
-  "Allergy Testing": "28a3cb2c-227d-40a6-b129-b82a3cf895e6",
-  Allergy: "61c406d4-29a9-480d-8777-2c8f441d2ad2",
-  Vaccines: "6865fb8d-d0a4-4ab0-9e75-8045f226f831",
-  "Allergy Treatment": "6d7843f9-aed2-47f4-8ed7-425d932621e1",
-  "Seasonal Allergies": "8529261b-d5d8-4760-985a-ae05e1109a86",
-  Gluten: "92d60a04-3961-4422-9890-d5f9acdca824",
-  "Immune System Disorder": "b1729a21-8587-4a6c-8c7b-5a9c5c8e069f",
-  Headache: "dc0b4d3f-4d4a-4f6c-9617-e93fec9736f7",
-  Asthma: "dfa462db-21a8-46e1-b40a-5376d6604c62",
-  "Allergy Group News": "ffc2a451-195c-4967-b644-bcdadfc9931e",
+  Lodging: '7d45bc01-0e4f-4839-929d-9301d185f68f',
+  'RV Parks & Campgrounds': '12b8624d-99dc-46ff-acbc-ce3bafcd21f4',
+  'RV Parks': '12b8624d-99dc-46ff-acbc-ce3bafcd21f4',
+  'Real Estate': '01ab4d13-481b-46ab-ae1f-2ee769a16473',
+  'Transportation Services': '019dcbd7-8e74-4d3d-b9b1-e6cdbaa523eb',
+  Restaurants: '2316bc01-ada0-4bea-9922-230139182283',
+  'Bars & Catering': '2316bc01-ada0-4bea-9922-230139182283',
+  ' Bars & Catering': '2316bc01-ada0-4bea-9922-230139182283',
+  'Restaurants, Bars & Catering': '2316bc01-ada0-4bea-9922-230139182283',
+  'Religious Services': '7c1edaf9-1af7-43c5-8428-4a265dfe5d8f',
+  'Community Services': '2945c6d1-69e7-4112-88b6-66de5e86760d',
+  'Photography & Wedding Services': 'c0fa95d4-cabf-4b78-a153-3deb5108210a',
+  'Contractors & Construction': '3a438cb7-f2f9-493d-9cb5-733a883f871d',
+  'Recreation Services': '1c73b011-1228-4712-9674-5e05ce98e995',
+  'Other Services': '8066cdaa-dc72-458f-bd64-c87f0921cd41',
+  ' Non-Profit': '8066cdaa-dc72-458f-bd64-c87f0921cd41',
+  'Shops & Distributors': '710a1680-1b5b-4d97-ae5e-3527bfffa4db',
+  ' Shops & Distributors': '710a1680-1b5b-4d97-ae5e-3527bfffa4db',
+  Stores: '710a1680-1b5b-4d97-ae5e-3527bfffa4db',
+  ' Campgrounds & Reunion Facilities': '12b8624d-99dc-46ff-acbc-ce3bafcd21f4',
 };
-let blogMutations = [];
-let blogs = [];
+let businessMutations = [];
+let allTheBusinesses = [];
 const supremeParser = new XMLParser();
-fs.readFile(__dirname + "/ArticleListEntity.xml", function (err, data) {
-  let xmlData = supremeParser.parse(data).DNNGo_xBlog;
-  for (let i = 0; i < xmlData.ArticleList.ArticleItem.length; i++) {
-    let currentBlog = xmlData.ArticleList.ArticleItem[i];
-    const blogCats = currentBlog.Categories.split(";/");
+fs.readFile(__dirname + '/BusinessDirectory.xml', function (err, data) {
+  let xmlData = supremeParser.parse(data).WMO_BusinessDirectory;
+  const businesses = xmlData.XmlSliserEntityList.XmlSliserEntityItem;
+
+  for (let i = 0; i < businesses.length; i++) {
+    let currentBusiness = businesses[i];
     let finalCats = [];
-    blogCats.forEach((cat) => {
-      finalCats.push({
-        _type: "reference",
-        _ref: categories[cat],
-        _key: IdGenerator.generateUniqueStringId(),
+    if (currentBusiness.Groups) {
+      const businessCats = currentBusiness.Groups.split(',');
+      businessCats.forEach((cat) => {
+        const ref = categories[cat] ? categories[cat] : cat;
+        finalCats.push({
+          _type: 'reference',
+          _ref: ref,
+          _key: IdGenerator.generateUniqueStringId(),
+        });
       });
-    });
-    let blog = {
-      _type: "post",
+    }
+    currentBusiness.Options = JSON.parse(currentBusiness.Options);
+    let business = {
+      _type: 'business',
       _id: IdGenerator.generateUniqueStringId(),
-      title: currentBlog.Title,
-      author: {
-        _type: "reference",
-        _ref: "c6e67581-dfa8-40f7-89ee-55351244b4bf",
+      name: currentBusiness.Options.Title,
+      slug: {
+        _type: 'slug',
+        current: currentBusiness.Options.FriendlyUrl,
       },
-      mainImage: {},
+      logo: currentBusiness.Options.Picture,
+      description: currentBusiness.Options.Description,
+      address: {
+        street: currentBusiness.Options.Street,
+        city: currentBusiness.Options.City,
+        state: currentBusiness.Options.State,
+        zip: currentBusiness.Options.Zip,
+      },
+      phone: currentBusiness.Options.ContactNumber,
+      websiteLink: currentBusiness.Options.WebSite,
+      email: currentBusiness.Options.Email,
+      goldMember: false,
+      openFall: true,
+      openSpring: true,
+      openWinter: true,
       categories: finalCats,
-      publishedAt: currentBlog.PublishTime,
-      // body: {},
-      seo: {
-        title: currentBlog.SearchTitle,
-        slug: {
-          _type: "slug",
-          current: currentBlog.Source.split("/")[3],
-        },
-        description: currentBlog.SearchDescription,
-      },
+      facebookLink: currentBusiness.Options.flink,
+      twitterLink: currentBusiness.Options.tlink,
+      instagramLink: currentBusiness.Options.ilink,
     };
-    blogs.push(blog);
-    blogMutations.push({ createIfNotExists: blog });
+    businessMutations.push({ createIfNotExists: business });
+    allTheBusinesses.push(business);
   }
   const reqBody = {
-    mutations: blogMutations,
+    mutations: businessMutations,
   };
   if (publish) {
-    api.post("", reqBody).then((res) => {
-      console.log("Successfully published");
+    api.post('', reqBody).then((res) => {
+      console.log('Successfully published');
     });
   }
-  jsonData = JSON.stringify(blogs);
-  fs.writeFile("out/data.json", jsonData, () => {
-    console.log("data.json created");
-    console.log("Dunzzo");
+  jsonData = JSON.stringify(allTheBusinesses);
+  fs.writeFile('out/data.json', jsonData, () => {
+    console.log('Dunzzo');
   });
 });
