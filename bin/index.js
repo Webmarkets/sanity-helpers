@@ -1,97 +1,100 @@
 #!/usr/bin/env node
 
-const { XMLParser } = require("fast-xml-parser/src/fxp");
-const { IdGenerator } = require("./id-generator");
-const axios = require("axios");
-const Schema = require("@sanity/schema");
-const fs = require("fs");
+const { XMLParser } = require('fast-xml-parser/src/fxp');
+const { IdGenerator } = require('./id-generator');
+const axios = require('axios');
+const Schema = require('@sanity/schema');
+const fs = require('fs');
 let publish = false;
 const args = process.argv.slice(2);
 args.forEach((val) => {
-  if (val === "--publish") {
+  if (val === '--publish') {
     publish = true;
-    console.log("Publishing to Sanity");
+    console.log('Publishing to Sanity');
   }
 });
-const config = JSON.parse(fs.readFileSync("./env.json"));
+const config = JSON.parse(fs.readFileSync('./env.json'));
 
 const api = axios.create({
-  baseURL: "https://1054cqfs.api.sanity.io/v1/data/mutate/production",
+  baseURL: 'https://bjktnsyb.api.sanity.io/v1/data/mutate/production',
   timeout: 10000,
   headers: {
-    "User-Agent": "blog-client",
-    "Content-Type": "application/json",
+    'User-Agent': 'blog-client',
+    'Content-Type': 'application/json',
     Authorization: `Bearer ${config.apiKey}`,
   },
 });
 
-let jsonData = "";
+let jsonData = '';
 
 const categories = {
-  "Food Allergy": "1ce33a4c-0eed-46e0-b362-62a5f15b4366",
-  "Healthy Skins": "0f6afb52-df81-4409-86b7-77b9447ac7ce",
-  "Allergy Testing": "28a3cb2c-227d-40a6-b129-b82a3cf895e6",
-  Allergy: "61c406d4-29a9-480d-8777-2c8f441d2ad2",
-  Vaccines: "6865fb8d-d0a4-4ab0-9e75-8045f226f831",
-  "Allergy Treatment": "6d7843f9-aed2-47f4-8ed7-425d932621e1",
-  "Seasonal Allergies": "8529261b-d5d8-4760-985a-ae05e1109a86",
-  Gluten: "92d60a04-3961-4422-9890-d5f9acdca824",
-  "Immune System Disorder": "b1729a21-8587-4a6c-8c7b-5a9c5c8e069f",
-  Headache: "dc0b4d3f-4d4a-4f6c-9617-e93fec9736f7",
-  Asthma: "dfa462db-21a8-46e1-b40a-5376d6604c62",
-  "Allergy Group News": "ffc2a451-195c-4967-b644-bcdadfc9931e",
+  'Alpine Lakes Report': '06340a0c-445b-4dc6-a285-4ab3468ef461',
+  'River Rafting': 'd5cbe36c-1b37-4210-be39-fd4986d3de46',
+  'Private Events': '4089abd9-98cb-4829-942b-6344e9a1d7fd',
+  'Fall Activities': 'c89d86ed-4be8-4148-b868-807a2ee4c7b3',
+  'Spring Activities': 'c4cec847-7849-4487-832c-c553df8bf6ff',
+  'Summer Activities': 'dc096e0c-743e-4dac-beb6-ba31309e18c7',
+  'Downtown Businesses': '33bb439c-551c-4162-87e2-35581d0e7328',
+  'Stanley Chamber Blog': null,
+  'Ski Report': '4cfa75e0-65ac-49c7-b989-109fcde8a067',
+  'Fishing Report': 'bd7816ce-5bd3-4265-9b78-5f3c64dde84f',
+  'Winter Activities': '2bfa4570-211c-444c-bfe5-90cd7aa231c1',
 };
 let blogMutations = [];
 let blogs = [];
 const supremeParser = new XMLParser();
-fs.readFile(__dirname + "/ArticleListEntity.xml", function (err, data) {
+fs.readFile(__dirname + '/ArticleListEntity.xml', function (err, data) {
   let xmlData = supremeParser.parse(data).DNNGo_xBlog;
   for (let i = 0; i < xmlData.ArticleList.ArticleItem.length; i++) {
     let currentBlog = xmlData.ArticleList.ArticleItem[i];
-    const blogCats = currentBlog.Categories.split(";/");
+    const blogCats = currentBlog.Categories.split(';/');
     let finalCats = [];
     blogCats.forEach((cat) => {
-      finalCats.push({
-        _type: "reference",
-        _ref: categories[cat],
-        _key: IdGenerator.generateUniqueStringId(),
-      });
+      if (categories[cat]) {
+        finalCats.push({
+          _type: 'reference',
+          _ref: categories[cat],
+          _key: IdGenerator.generateUniqueStringId(),
+        });
+      }
     });
     let blog = {
-      _type: "post",
+      _type: 'post',
       _id: IdGenerator.generateUniqueStringId(),
       title: currentBlog.Title,
       author: {
-        _type: "reference",
-        _ref: "c6e67581-dfa8-40f7-89ee-55351244b4bf",
+        _type: 'reference',
+        _ref: '80d4ad62-c0b7-4a8d-8873-a84c89aa1eea',
       },
-      mainImage: {},
       categories: finalCats,
-      publishedAt: currentBlog.PublishTime,
-      // body: {},
+      publishedAt: new Date(currentBlog.PublishTime),
+      featuredImage: currentBlog.AdditionalPicture,
       seo: {
-        title: currentBlog.SearchTitle,
+        title: currentBlog.SearchTitle != '' ? currentBlog.SearchTitle : currentBlog.Title,
         slug: {
-          _type: "slug",
-          current: currentBlog.Source.split("/")[3],
+          _type: 'slug',
+          current: currentBlog.Source.split('/')[3],
         },
-        description: currentBlog.SearchDescription,
+        description: currentBlog.SearchDescription != '' ? currentBlog.SearchDescription : currentBlog.Summary,
+        noIndex: false,
       },
     };
-    blogs.push(blog);
-    blogMutations.push({ createIfNotExists: blog });
+    if (currentBlog.Status === 1) {
+      blogs.push(blog);
+      blogMutations.push({ createIfNotExists: blog });
+    }
   }
   const reqBody = {
     mutations: blogMutations,
   };
   if (publish) {
-    api.post("", reqBody).then((res) => {
-      console.log("Successfully published");
+    api.post('', reqBody).then((res) => {
+      console.log('Successfully published');
     });
   }
   jsonData = JSON.stringify(blogs);
-  fs.writeFile("out/data.json", jsonData, () => {
-    console.log("data.json created");
-    console.log("Dunzzo");
+  fs.writeFile('out/data.json', jsonData, () => {
+    console.log('data.json created');
+    console.log('Dunzzo');
   });
 });
