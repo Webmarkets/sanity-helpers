@@ -5,13 +5,20 @@ const normalizeSlug = slug => {
     let hexPattern = /%[a-fA-F0-9]{2}/g;
     newStr = newStr.replaceAll(hexPattern, match => {
         let decimalCode = parseInt(match.substring(1, 3), 16);
-        // only parse renderable chars
-        if (decimalCode > 31 && decimalCode < 127) {
-            return String.fromCharCode(decimalCode);
-        } else {
-            return '';
-        }
+        return String.fromCharCode(decimalCode);
     });
+
+    // replace diacritics and special characters
+    let extendedChars = 'ÁÄÂÀÃÅČÇĆĎÉĚËÈÊẼĔȆÍÌÎÏŇÑÓÖÒÔÕØŘŔŠŤÚŮÜÙÛÝŸŽáäâàãåčçćďéěëèêẽĕȇíìîïňñóöòôõøðřŕšťúůüùûýÿžþÞĐđßÆa·/_,:;';
+    var baseASCII = 'AAAAAACCCDEEEEEEEEIIIINNOOOOOORRSTUUUUUYYZaaaaaacccdeeeeeeeeiiiinnooooooorrstuuuuuyyzbBDdBAa------';
+    for (let i = 0; i < newStr.length; i++) {
+        for (let j = 0; j < extendedChars.length; j++) {
+            if (newStr[i] === extended[j]) {
+                newStr = newStr.slice(0, i) + baseASCII[j] + newStr.slice(i + 1);
+                break;
+            }
+        }
+    }
 
     // terminate string at newline or return
     newStr = newStr.replace(/(\n|\r)+?.*/g, '');
