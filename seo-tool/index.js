@@ -1,3 +1,5 @@
+// TODO: verbose logging
+
 const Fetcher = require('./Fetcher');
 const Extractor = require('./Extractor');
 const process = require('process');
