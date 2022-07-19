@@ -8,36 +8,27 @@ module.exports = class Logger {
         }
     }
 
-    log(message) {
-        if (message.level > this.logLevel) {
-            return;
+    isInLogLevel(level) {
+        if (!level || level <= this.logLevel) {
+            return true;
         } else {
-            switch (message.type) {
-                case 'info':
-                    this.info(message.content);
-                    break;
-                case 'warning':
-                    this.warn(message.content);
-                    break;
-                case 'error':
-                    this.error(message.content);
-                    break;
-                default:
-                    this.info(message.content);
-                    return;
-            }
+            return false;
         }
     }
 
-    info(messageContent) {
-        console.log(`[INFO] ${messageContent}`);
+    success(message, level) {
+        if (this.isInLogLevel(level)) console.warn(`\x1b[1;32m[SUCCESS] ${message}\x1b[0m`);
     }
 
-    warn(messageContent) {
-        console.warn(`[WARNING]\x1b[1;33m${messageContent}\x1b[0m`);
+    info(message, level) {
+        if (this.isInLogLevel(level)) console.log(`[INFO] ${message}`);
     }
 
-    error(messageContent) {
-        console.error(`[ERROR]\x1b[1;31m${messageContent}\x1b[0m`);
+    warn(message, level) {
+        if (this.isInLogLevel(level)) console.warn(`\x1b[1;93m[WARNING] ${message}\x1b[0m`);
+    }
+
+    error(message, level) {
+        if (this.isInLogLevel(level)) console.error(`\x1b[1;31m[ERROR] ${message}\x1b[0m`);
     }
 }
