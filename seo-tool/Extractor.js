@@ -44,12 +44,22 @@ module.exports = class Extractor {
         }
     }
 
+    logFieldStatus(seoObject) {
+        let fields = Object.keys(seoObject);
+        fields.forEach(field => {
+            if (seoObject[field] === null) {
+                console.warn(`Missing field for document ${seoObject.URL}: ${field}`, 1);
+            }
+        })
+    }
+
     getPrimarySEO() {
         let data = { URL: this.URL };
         data.title = this.getTitle();
         data.description = this.getDescription();
         data.canonical = this.getCanonical();
         data.robots = this.getRobots();
+        this.logFieldStatus(data);
         return data;
     }
 }

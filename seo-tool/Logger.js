@@ -11,16 +11,20 @@ module.exports = class Logger {
         this.console = new Console({ stdout: process.stdout, stderr: process.stderr })
     }
 
-    isInLogLevel(level) {
+    validateLog(message, level) {
         if (!level || level <= this.logLevel) {
-            return true;
+            if (typeof message == 'object') {
+                return JSON.stringify(message, null, 2);
+            }
+            return message;
         } else {
             return false;
         }
     }
 
     success(message, level) {
-        if (this.isInLogLevel(level)) this.console.warn(`\x1b[1;32m[SUCCESS] ${message}\x1b[0m`);
+        let validLog = this.validateLog(message, level);
+        if (validLog) this.console.warn(`\x1b[1;32m[SUCCESS] ${validLog}\x1b[0m`);
     }
 
     log(message, level) {
@@ -28,14 +32,17 @@ module.exports = class Logger {
     }
 
     info(message, level) {
-        if (this.isInLogLevel(level)) this.console.log(`[INFO] ${message}`);
+        let validLog = this.validateLog(message, level);
+        if (validLog) this.console.log(`[INFO] ${validLog}`);
     }
 
     warn(message, level) {
-        if (this.isInLogLevel(level)) this.console.warn(`\x1b[1;93m[WARNING] ${message}\x1b[0m`);
+        let validLog = this.validateLog(message, level);
+        if (validLog) this.console.warn(`\x1b[1;93m[WARNING] ${validLog}\x1b[0m`);
     }
 
     error(message, level) {
-        if (this.isInLogLevel(level)) this.console.error(`\x1b[1;31m[ERROR] ${message}\x1b[0m`);
+        let validLog = this.validateLog(message, level);
+        if (validLog) this.console.error(`\x1b[1;31m[ERROR] ${validLog}\x1b[0m`);
     }
 }

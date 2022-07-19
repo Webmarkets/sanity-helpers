@@ -23,8 +23,10 @@ module.exports = class Fetcher {
         let pendingDocs = this.list.map(async URL => {
             let fetchedItem = { URL };
             try {
+                console.log(`Sending request for document ${URL}`, 1);
                 let retrievedDoc = await this.get(URL);
                 fetchedItem.status = "success";
+                console.success(`Fetched document ${URL}`, 1);
                 fetchedItem.data = retrievedDoc;
             } catch (err) {
                 let msg = `Failed to retrieve document ${URL}: ${err.message}`;
@@ -34,9 +36,13 @@ module.exports = class Fetcher {
             return fetchedItem;
         });
         let finishedDocs = await Promise.allSettled(pendingDocs);
-        return finishedDocs.map(promiseResult => {
+        let successCount = 0;
+        finishedDocs = finishedDocs.map(promiseResult => {
+            if (promiseResult.value && promiseResult.value.status == "success") successCount++;
             return promiseResult.value;
-        })
+        });
+        console.log(`Retrieved ${successCount}/${this.list.length} documents`);
+        return finishedDocs;
     }
 
     async get(URL) {
@@ -49,6 +55,8 @@ module.exports = class Fetcher {
     }
 
     async getCachedDocument(cacheRef, URL) {
+
+        console.log('Requested document is in cache, validating cache entry', 1)
 
         let axiosOptions = {
             headers: { 'If-None-Match': `"${cacheRef.ETag}"` },
@@ -63,11 +71,13 @@ module.exports = class Fetcher {
         // 304: Not Modified - cache is fine
         // 200: OK - requested resource has been updated
         if (response.status == 304) {
+            console.success('Cache entry is valid, retrieving cached document', 1)
             return this.cache.getItem(URL);
         } else if (response.status == 200) {
             let ETag = response.headers['ETag'];
             this.cache.removeItem(URL);
             if (ETag) {
+                console.log('Refreshing cache entry', 1)
                 // store new item
                 this.cache.store(URL, ETag, response.data);
             }
@@ -84,7 +94,10 @@ module.exports = class Fetcher {
         if (response.status == 200) {
             let ETag = response.headers['etag'];
             if (ETag) {
+                console.log('Caching requested document', 1);
                 this.cache.store(URL, ETag, response.data);
+            } else {
+                console.warn('Requested document has no ETag header, unable to cache', 1);
             }
             return response.data;
         } else {
