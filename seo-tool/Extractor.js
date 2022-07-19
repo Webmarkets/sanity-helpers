@@ -44,6 +44,36 @@ module.exports = class Extractor {
         }
     }
 
+    getOpenGraph() {
+        let ogData = {
+            type: null,
+            title: null,
+            image: null,
+            url: null,
+            description: null,
+        };
+        Object.keys(ogData).forEach(key => {
+            let ogElement = this.head.querySelector(`meta[property="og:${key}"]`);
+            if (ogElement) ogData[key] = ogElement.getAttribute('content');
+        });
+        return ogData;
+    }
+
+    getTwitterCard() {
+        let twData = {
+            card: null,
+            url: null,
+            title: null,
+            description: null,
+            image: null
+        };
+        Object.keys(twData).forEach(key => {
+            let twElement = this.head.querySelector(`meta[property="twitter:${key}"]`);
+            if (twElement) twData[key] = twElement.getAttribute('content');
+        });
+        return twData;
+    }
+
     logFieldStatus(seoObject) {
         let fields = Object.keys(seoObject);
         fields.forEach(field => {
@@ -59,6 +89,8 @@ module.exports = class Extractor {
         data.description = this.getDescription();
         data.canonical = this.getCanonical();
         data.robots = this.getRobots();
+        data.openGraph = this.getOpenGraph();
+        data.twitterCard = this.getTwitterCard();
         this.logFieldStatus(data);
         return data;
     }
