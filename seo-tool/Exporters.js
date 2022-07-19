@@ -1,0 +1,170 @@
+const fs = require('fs');
+const { decode } = require('html-entities');
+
+class Exporter {
+    constructor(seoDataList) {
+        this.list = seoDataList;
+        this.cleanData();
+    }
+
+    getCleanTitle(seoTitle) {
+        let shortTitle = seoTitle.match(/^[^\|\n]+(?=\|*)/)[0];
+        let cleanTitle = shortTitle || seoTitle;
+        // Parse html entities like &amp;
+        cleanTitle = decode(cleanTitle);
+        return cleanTitle.trim();
+    }
+
+    removeNullFields(seo) {
+        let validSeo = {};
+        let fields = Object.keys(seo);
+        fields.forEach(field => {
+            if (seo[field] !== null) {
+                // recursively purge null fields
+                if (typeof seo[field] == 'object') {
+                    validSeo[field] = this.removeNullFields(seo[field]);
+                } else {
+                    validSeo[field] = seo[field];
+                }
+            }
+        });
+        return validSeo;
+    }
+
+    cleanData() {
+        this.list = this.list.map(seo => {
+            let cleanSeo = { ...seo };
+            cleanSeo.title = this.getCleanTitle(seo.title);
+            return this.removeNullFields(cleanSeo);
+        })
+    }
+}
+
+class DataStore extends Exporter {
+    constructor(seoDataList, options) {
+        super(seoDataList);
+
+        let extension = '';
+
+        this.format = 'json';
+        extension = '.json';
+        let now = new Date();
+        this.path = `./seo-${now.getFullYear()}-${now.getDate()}-${now.getMonth()}`;
+
+        if (options) {
+            this.format = options.format || this.format;
+            extension = options.extension || extension;
+            this.path = options.path || this.path;
+        }
+        this.path += extension;
+
+        this.createStoreFile();
+    }
+
+    createStoreFile() {
+        if (fs.existsSync(this.path)) {
+            throw `File at ${this.path} already exists`;
+        } else {
+            fs.writeFile(this.path, '', () => { return });
+            console.log(`Created file at ${this.path}`);
+        }
+    }
+
+    // TODO: add CSV export
+    export() {
+        let now = new Date().toISOString();
+        let data = {
+            crawlDate: now,
+            pagesCrawled: this.list.length,
+            seoData: this.list
+        }
+
+        fs.appendFile(this.path, JSON.stringify(data, null, 4), err => {
+            if (err) {
+                console.error(`Failed to export data: ${err}`);
+            } else {
+                console.success('Successfully exported data');
+            }
+        })
+    }
+}
+
+class SanityExporter extends Exporter {
+    constructor(seoDataList, sanityConfig, options) {
+        super(seoDataList);
+        const sanityClient = require('@sanity/client');
+
+        try {
+            this.validateConfig(sanityConfig);
+            this.client = sanityClient(sanityConfig);
+        } catch (err) {
+            throw err;
+        }
+        this.useDrafts = (options.useDrafts || false);
+        if (options.dryRun) {
+            console.warn('Dry run is enabled. No documents will be exported.');
+            this.dryRun = true;
+        } else {
+            this.dryRun = false;
+        }
+    }
+
+    validateConfig(sanityConfig) {
+        let requiredKeys = ['projectId', 'dataset', 'apiVersion', 'token'];
+        requiredKeys.forEach(key => {
+            if (!sanityConfig[key]) {
+                let msg = `Missing required key in Sanity configuration: ${key}`;
+                throw msg;
+            }
+        });
+    }
+
+    createSanityDocument(data, title, type) {
+        let doc = {};
+        doc.seo = { ...data };
+
+        if (this.useDrafts) {
+            doc._id = "drafts.";
+        }
+
+        if (!title) {
+            doc.title = doc.seo.title;
+        } else {
+            doc.title = title;
+        }
+
+        if (!type) {
+            throw 'Please provide a valid type for new Sanity documents';
+        } else {
+            doc._type = type;
+        }
+
+        return doc;
+    }
+
+    async export(type) {
+        let sanityDocs = this.list.map(seo => {
+            return this.createSanityDocument(cleanSeo, title, type);
+        })
+
+        let pendingExports = sanityDocs.map(async doc => {
+            console.log(`Exporting document ${doc.title}`, 1);
+            return await this.client.create(doc, { dryRun: this.dryRun });
+        });
+
+        let successfulDocs = 0;
+        await Promise.allSettled(pendingExports).then(values => {
+            values.forEach(promise => {
+                if (promise.status == 'rejected') {
+                    console.error(`Failed to export document: ${promise.reason}`);
+                } else {
+                    console.success(`Exported document`, 1);
+                    successfulDocs++;
+                }
+            });
+            console.info(`Successfully exported ${successfulDocs}/${this.list.length} documents`);
+        })
+    }
+}
+
+module.exports = { Exporter, SanityExporter, DataStore }

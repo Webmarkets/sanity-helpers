@@ -1,4 +1,8 @@
-# Blog Exporter
+# Sanity Helpers
 
-- Run `npm run test` to verify data is getting translated correctly.
-- Run `npm run publish` to publish the data once it's been translated.
+A collection of utilty scripts and packages to assist with use of the Sanity platform.
+
+## Scripts/Packages
+
+- [blog-exporter](./blog-exporter) - Formats blog posts as JSON
+- [seo-tool](./seo-tool) - Extracts SEO metadata from HTML

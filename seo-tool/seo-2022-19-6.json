@@ -1,0 +1,21 @@
+{
+    "crawlDate": "2022-07-19T19:13:39.717Z",
+    "pagesCrawled": 1,
+    "seoData": [
+        {
+            "URL": "https://moz.com/beginners-guide-to-seo/on-page-seo",
+            "title": "On-Page SEO [Beginner's Guide to SEO] - Moz",
+            "description": "This is a hefty chapter, covering optimized design, user experience, information architecture, and all of the ways you can adjust how you publish content to maximize its visibility and resonance with your audience.",
+            "canonical": {
+                "isCanonical": true,
+                "URL": "https://moz.com/beginners-guide-to-seo/on-page-seo"
+            },
+            "robots": {
+                "bot": "robots",
+                "directives": {
+                    "0": "all"
+                }
+            }
+        }
+    ]
+}
