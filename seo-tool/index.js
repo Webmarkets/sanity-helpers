@@ -8,6 +8,8 @@ const process = require('process');
 let urlToFetch = process.argv[2];
 let docFetcher = new Fetcher([urlToFetch]);
 let logger = new Logger(0);
+// Overwrite console for custom log messages
+console = logger;
 
 docFetcher.getListDocuments().then(docList => {
     docFetcher.cache.commit();
