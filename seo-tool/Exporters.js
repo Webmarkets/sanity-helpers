@@ -1,4 +1,3 @@
-const sanityClient = require('@sanity/client');
 const fs = require('fs');
 
 class Exporter {
@@ -37,22 +36,16 @@ class DataStore extends Exporter {
         super(seoDataList);
 
         let extension = '';
-        if (options.format == 'json') {
-            this.format = 'json';
-            this.extension = '.json';
-        } else if (options.format == 'csv') {
-            this.format = 'csv';
-            this.extension = '.csv';
-        } else {
-            this.format = 'json';
-            this.extension = '.json';
-        }
 
-        if (!options.path) {
-            let now = new Date();
-            this.path = `./seo-${now.getFullYear}-${now.getDate}-${now.getMonth}`;
-        } else {
-            this.path = options.path;
+        this.format = 'json';
+        extension = '.json';
+        let now = new Date();
+        this.path = `./seo-${now.getFullYear()}-${now.getDate()}-${now.getMonth()}`;
+
+        if (options) {
+            this.format = options.format || this.format;
+            extension = options.extension || extension;
+            this.path = options.path || this.path;
         }
         this.path += extension;
 
@@ -63,8 +56,8 @@ class DataStore extends Exporter {
         if (fs.existsSync(this.path)) {
             throw `File at ${this.path} already exists`;
         } else {
+            fs.writeFile(this.path, '', () => { return });
             console.log(`Created file at ${this.path}`);
-            fs.writeFile(this.path, '');
         }
     }
 
@@ -90,6 +83,8 @@ class DataStore extends Exporter {
 class SanityExporter extends Exporter {
     constructor(seoDataList, sanityConfig, options) {
         super(seoDataList);
+        const sanityClient = require('@sanity/client');
+
         try {
             this.validateConfig(sanityConfig);
             this.client = sanityClient(sanityConfig);
@@ -140,8 +135,8 @@ class SanityExporter extends Exporter {
 
     async export(type) {
         let sanityDocs = this.list.map(seo => {
-            let cleanSeo = super().removeNullFields(seo);
-            let title = super().getShortTitle(seo.title);
+            let cleanSeo = super.removeNullFields(seo);
+            let title = super.getShortTitle(seo.title);
             return this.createSanityDocument(cleanSeo, title, type);
         })
 

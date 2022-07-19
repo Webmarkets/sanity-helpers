@@ -8,7 +8,7 @@ A Node.js tool for scraping SEO metadata from a list of pages.
 
 ## To Do
 
-- [ ] Format output as a Sanity document
+- [x] Format output as a Sanity document
 - [ ] Add Sanity client functionality
 - [ ] Reading JSON array of urls from file
 - [ ] Upload as npm package to WM org for easy install?

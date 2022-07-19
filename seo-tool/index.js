@@ -1,6 +1,7 @@
 const Fetcher = require('./Fetcher');
 const Extractor = require('./Extractor');
 const Logger = require('./Logger');
+const { DataStore } = require('./Exporters');
 const process = require('process');
 
 let urlToFetch = process.argv[2];
@@ -11,8 +12,11 @@ console = logger;
 
 docFetcher.getListDocuments().then(docList => {
     docFetcher.cache.commit();
-    docList.forEach(document => {
+    let seoDataList = docList.map(document => {
         let seoExtractor = new Extractor(document.data, document.URL);
-        console.log(seoExtractor.getPrimarySEO());
-    })
+        return seoExtractor.getPrimarySEO();
+    });
+
+    let exporter = new DataStore(seoDataList);
+    exporter.export();
 })
