@@ -1,17 +1,18 @@
 const fs = require('fs');
+const { decode } = require('html-entities');
 
 class Exporter {
     constructor(seoDataList) {
         this.list = seoDataList;
+        this.cleanData();
     }
 
-    getShortTitle(seoTitle) {
-        let shortTitle = seoTitle.match(/^[^\|\n]+(?=\|*)/);
-        if (!shortTitle) {
-            console.warn(`Unable to find shorter title for ${seoTitle}`);
-        } else {
-            return shortTitle.trim();
-        }
+    getCleanTitle(seoTitle) {
+        let shortTitle = seoTitle.match(/^[^\|\n]+(?=\|*)/)[0];
+        let cleanTitle = shortTitle || seoTitle;
+        // Parse html entities like &amp;
+        cleanTitle = decode(cleanTitle);
+        return cleanTitle.trim();
     }
 
     removeNullFields(seo) {
@@ -28,6 +29,14 @@ class Exporter {
             }
         });
         return validSeo;
+    }
+
+    cleanData() {
+        this.list = this.list.map(seo => {
+            let cleanSeo = { ...seo };
+            cleanSeo.title = this.getCleanTitle(seo.title);
+            return this.removeNullFields(cleanSeo);
+        })
     }
 }
 
@@ -135,8 +144,6 @@ class SanityExporter extends Exporter {
 
     async export(type) {
         let sanityDocs = this.list.map(seo => {
-            let cleanSeo = super.removeNullFields(seo);
-            let title = super.getShortTitle(seo.title);
             return this.createSanityDocument(cleanSeo, title, type);
         })
 

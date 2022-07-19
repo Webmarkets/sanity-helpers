@@ -10,6 +10,11 @@ let logger = new Logger(1);
 // Overwrite console for custom log messages
 console = logger;
 
+process.on('uncaughtException', exception => {
+    console.exception(exception.message);
+    process.exit();
+})
+
 docFetcher.getListDocuments().then(docList => {
     docFetcher.cache.commit();
     let seoDataList = docList.map(document => {
