@@ -1,4 +1,5 @@
 const sanityClient = require('@sanity/client');
+const fs = require('fs');
 
 class Exporter {
     constructor(seoDataList) {
@@ -28,6 +29,61 @@ class Exporter {
             }
         });
         return validSeo;
+    }
+}
+
+class DataStore extends Exporter {
+    constructor(seoDataList, options) {
+        super(seoDataList);
+
+        let extension = '';
+        if (options.format == 'json') {
+            this.format = 'json';
+            this.extension = '.json';
+        } else if (options.format == 'csv') {
+            this.format = 'csv';
+            this.extension = '.csv';
+        } else {
+            this.format = 'json';
+            this.extension = '.json';
+        }
+
+        if (!options.path) {
+            let now = new Date();
+            this.path = `./seo-${now.getFullYear}-${now.getDate}-${now.getMonth}`;
+        } else {
+            this.path = options.path;
+        }
+        this.path += extension;
+
+        this.createStoreFile();
+    }
+
+    createStoreFile() {
+        if (fs.existsSync(this.path)) {
+            throw `File at ${this.path} already exists`;
+        } else {
+            console.log(`Created file at ${this.path}`);
+            fs.writeFile(this.path, '');
+        }
+    }
+
+    // TODO: add CSV export
+    export() {
+        let now = new Date().toISOString();
+        let data = {
+            crawlDate: now,
+            pagesCrawled: this.list.length,
+            seoData: this.list
+        }
+
+        fs.appendFile(this.path, JSON.stringify(data, null, 4), err => {
+            if (err) {
+                console.error(`Failed to export data: ${err}`);
+            } else {
+                console.success('Successfully exported data');
+            }
+        })
     }
 }
 
@@ -109,4 +165,4 @@ class SanityExporter extends Exporter {
     }
 }
 
-module.exports = { Exporter, SanityExporter }
+module.exports = { Exporter, SanityExporter, DataStore }
