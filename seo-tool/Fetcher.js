@@ -5,11 +5,13 @@ const Cache = require('./Cache');
 module.exports = class Fetcher {
     constructor(list, options) {
         this.list = list;
+
         if (options) {
             this.options = options;
         } else {
             this.options = { cacheDir: '/cache' };
         }
+
         let oldCacheInfo = __dirname + this.options.cacheDir + '/info.json';
         if (fs.existsSync(oldCacheInfo)) {
             let oldCacheData = fs.readFileSync(oldCacheInfo);
@@ -104,6 +106,14 @@ module.exports = class Fetcher {
             let message = `Unexpected server status ${response.status} for request ${URL}`;
             throw message;
         }
+    }
+
+    async getRobots(domain) {
+
+    }
+
+    async getSitemapPages(domain) {
+        let robots
     }
 
     // ! don't forget to cache commit after new entries are written

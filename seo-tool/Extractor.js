@@ -83,6 +83,45 @@ module.exports = class Extractor {
         })
     }
 
+    parseRobotsTxt(robotsTxt) {
+        let rules = robotsTxt.trim().split(/\n{2}/g);
+        return rules.map(rule => {
+            let ruleData = {
+                userAgent: [],
+                allow: [],
+                disallow: [],
+                sitemap: []
+            }
+            let directives = rule.split('\n');
+            directives.forEach(directive => {
+                let match = directive.match(/(.+)(:\s)(.+)/);
+                if (match) {
+                    let key = match[1];
+                    let value = match[3];
+                    switch (key.toLowerCase()) {
+                        case 'user-agent':
+                            ruleData.userAgent.push(value);
+                            break;
+                        case 'allow':
+                            ruleData.allow.push(value);
+                            break;
+                        case 'disallow':
+                            ruleData.disallow.push(value);
+                            break;
+                        case 'sitemap':
+                            ruleData.sitemap.push(value);
+                            break;
+                        default:
+                            console.warn(`Encountered invalid robots.txt key: ${key}`);
+                    }
+                } else {
+                    console.warn(`Unable to parse robots.txt directive: ${directive}`);
+                }
+            });
+            return ruleData;
+        });
+    }
+
     getPrimarySEO() {
         let data = { URL: this.URL };
         data.title = this.getTitle();
