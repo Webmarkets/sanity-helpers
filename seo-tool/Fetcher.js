@@ -1,6 +1,7 @@
 const axios = require('axios');
 const fs = require('fs');
 const Cache = require('./Cache');
+const { GlobalExtractor } = require('./Extractor');
 
 module.exports = class Fetcher {
     constructor(list, options) {
@@ -109,11 +110,33 @@ module.exports = class Fetcher {
     }
 
     async getRobots(domain) {
-
+        try {
+            let response = await axios.get(domain + '/robots.txt');
+            let robots = response.data.toString();
+            return GlobalExtractor.parseRobotsTxt(robots);
+        } catch (err) {
+            let message = `Failed to retrieve robots.txt rules: ${err.message}`;
+            throw message;
+        }
     }
 
-    async getSitemapPages(domain) {
-        let robots
+    async getSitemapURLs() {
+        let robotRules = await this.getRobots(this.list[0]);
+        let sitemapList = robotRules.map(rule => rule.sitemap).flat();
+        let pendingRequests = sitemapList.map(async sitemap => {
+            return await axios.get(sitemap);
+        });
+        let siteMapData = await Promise.allSettled(pendingRequests).then(promises => {
+            return promises.map(promise => {
+                if (promise.status == "fulfilled") {
+                    return promise.value.data;
+                } else {
+                    let msg = `Failed to retrieve sitemap: ${promise.reason}`;
+                    console.error(msg);
+                }
+            })
+        });
+        return GlobalExtractor.getSitemapLocations(siteMapData.join());
     }
 
     // ! don't forget to cache commit after new entries are written

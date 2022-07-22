@@ -1,5 +1,6 @@
 const { parse } = require('node-html-parser');
-module.exports = class Extractor {
+const { decode } = require('html-entities');
+class Extractor {
     constructor(HTMLDocument, URL) {
         this.document = parse(HTMLDocument);
         this.URL = URL;
@@ -83,7 +84,21 @@ module.exports = class Extractor {
         })
     }
 
-    parseRobotsTxt(robotsTxt) {
+    getPrimarySEO() {
+        let data = { URL: this.URL };
+        data.title = this.getTitle();
+        data.description = this.getDescription();
+        data.canonical = this.getCanonical();
+        data.robots = this.getRobots();
+        data.openGraph = this.getOpenGraph();
+        data.twitterCard = this.getTwitterCard();
+        this.logFieldStatus(data);
+        return data;
+    }
+}
+
+class GlobalExtractor extends Extractor {
+    static parseRobotsTxt(robotsTxt) {
         let rules = robotsTxt.trim().split(/\n{2}/g);
         return rules.map(rule => {
             let ruleData = {
@@ -121,16 +136,15 @@ module.exports = class Extractor {
             return ruleData;
         });
     }
-
-    getPrimarySEO() {
-        let data = { URL: this.URL };
-        data.title = this.getTitle();
-        data.description = this.getDescription();
-        data.canonical = this.getCanonical();
-        data.robots = this.getRobots();
-        data.openGraph = this.getOpenGraph();
-        data.twitterCard = this.getTwitterCard();
-        this.logFieldStatus(data);
-        return data;
+    static getSitemapLocations(sitemap) {
+        let urlPattern = /(?<=<loc>)(.+)(?=<\/loc>)/g;
+        let urls = Array.from(sitemap.matchAll(urlPattern));
+        return urls.map(rawUrl => {
+            // Clean up the url if it has extra whitespace
+            // or html entities
+            return decode(rawUrl[0].trim());
+        })
     }
 }
+
+module.exports = { Extractor, GlobalExtractor }
