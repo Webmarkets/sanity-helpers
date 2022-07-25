@@ -11,7 +11,7 @@ let logger = new Logger(1);
 console = logger;
 
 process.on('uncaughtException', exception => {
-    console.exception(exception.message);
+    console.exception(exception);
     process.exit();
 })
 

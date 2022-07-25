@@ -46,8 +46,9 @@ module.exports = class Logger {
         if (validLog) this.console.error(`\x1b[1;31m[ERROR] ${validLog}\x1b[0m`);
     }
 
-    exception(message, level) {
-        let validLog = this.validateLog(message, level);
-        if (validLog) this.console.error(`\x1b[1;31m[EXCEPTION] ${validLog}\x1b[0m`);
+    exception(error, level) {
+        // let validLog = this.validateLog(error.message, level);
+        this.console.error(`\x1b[1;31m[EXCEPTION] ${error.message}\x1b[0m`);
+        this.console.error(error.cause);
     }
 }
