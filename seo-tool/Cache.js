@@ -63,14 +63,15 @@ class CacheManager {
             let existingTable = fs.readFileSync(`${this.directory}/table.json`);
             existingTable = JSON.parse(existingTable);
             existingTable.map(staticEntry => new CacheEntry(staticEntry));
-            return existingTable.filter(entry => {
-                try {
-                    entry.getDocument(this.directory);
-                    return true;
-                } catch (err) {
-                    return false;
-                }
-            });
+            return existingTable;
+            // return existingTable.filter(entry => {
+            //     try {
+            //         entry.getDocument(this.directory);
+            //         return true;
+            //     } catch {
+            //         return false;
+            //     }
+            // });
         } else {
             return [];
         }
@@ -134,26 +135,27 @@ class CacheManager {
 
     async validate(entry) {
         let axiosConfig = {
-            validateStatus: status => { return true }
+            validateStatus: status => { return true },
+            'baseURL': entry.url
         }
         if (entry.type == 'etag') {
-            axiosConfig.headers = [
-                { 'If-None-Match': entry.id }
-            ];
+            axiosConfig.headers = {
+                'If-None-Match': entry.id
+            };
         } else {
-            axiosConfig.headers = [
-                { 'If-Modified-Since': entry.date }
-            ]
+            axiosConfig.headers = {
+                'If-Modified-Since': entry.date
+            }
         }
 
-        let response = await axios.get(entry.url, axiosConfig);
+        let response = await axios.get("", axiosConfig);
         // 200 = new content
         if (response.status == 200) {
             this.updateEntry(entry, response);
             // 304 = not modified
         } else if (response.status == 304) {
             let date = new Date().toISOString();
-            existingEntry.date = date;
+            entry.date = date;
         } else {
             let message = `Unexpected response status: ${response.status}`;
             throw message;
